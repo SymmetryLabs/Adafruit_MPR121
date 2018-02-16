@@ -21,6 +21,14 @@
 import sys
 import time
 
+import argparse
+import random
+import time
+
+from pythonosc import osc_message_builder
+from pythonosc import udp_client
+
+
 import Adafruit_MPR121.MPR121 as MPR121
 
 
@@ -71,7 +79,7 @@ while True:
     # If you're curious or want to see debug info for each pin, uncomment the
     # following lines:
     #print '\t\t\t\t\t\t\t\t\t\t\t\t\t 0x{0:0X}'.format(cap.touched())
-    #filtered = [cap.filtered_data(i) for i in range(12)]
-    #print('Filt:', '\t'.join(map(str, filtered)))
-    #base = [cap.baseline_data(i) for i in range(12)]
-    #print('Base:', '\t'.join(map(str, base)))
+    filtered = [cap.filtered_data(i) for i in range(5,6)]
+    print('Filt:', '\t'.join(map(str, filtered))),
+    base = [cap.baseline_data(i) for i in range(5,6)]
+    print('Base:', '\t'.join(map(str, base)))
