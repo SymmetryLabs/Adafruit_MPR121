@@ -31,6 +31,14 @@ from pythonosc import udp_client
 
 import Adafruit_MPR121.MPR121 as MPR121
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--ip", default="127.0.0.1",
+    help="The ip of the OSC server")
+parser.add_argument("--port", type=int, default=3030,
+    help="The port the OSC server is listening on")
+args = parser.parse_args()
+
+client = udp_client.SimpleUDPClient(args.ip, args.port)
 
 print('Adafruit MPR121 Capacitive Touch Sensor Test')
 
@@ -53,33 +61,48 @@ if not cap.begin():
 # Main loop to print a message every time a pin is touched.
 print('Press Ctrl-C to quit.')
 last_touched = cap.touched()
+
+
+def fmtSendOsc(label, enum_list):
+    for i, elt in enumerate(enum_list):
+        client.send_message("/touch/" + label + "/" + str(i), elt)
+        # print(elt)
+
 while True:
-    current_touched = cap.touched()
-    # Check each pin's last and current state to see if it was pressed or released.
-    for i in range(12):
-        # Each pin is represented by a bit in the touched value.  A value of 1
-        # means the pin is being touched, and 0 means it is not being touched.
-        pin_bit = 1 << i
-        # First check if transitioned from not touched to touched.
-        if current_touched & pin_bit and not last_touched & pin_bit:
-            print('{0} touched!'.format(i))
-        # Next check if transitioned from touched to not touched.
-        if not current_touched & pin_bit and last_touched & pin_bit:
-            print('{0} released!'.format(i))
-    # Update last state and wait a short period before repeating.
-    last_touched = current_touched
-    time.sleep(0.1)
+    try:
+        current_touched = cap.touched()
+        # Check each pin's last and current state to see if it was pressed or released.
+        for i in range(12):
+            # Each pin is represented by a bit in the touched value.  A value of 1
+            # means the pin is being touched, and 0 means it is not being touched.
+            pin_bit = 1 << i
+            # First check if transitioned from not touched to touched.
+            if current_touched & pin_bit and not last_touched & pin_bit:
+                print('{0} touched!'.format(i))
+            # Next check if transitioned from touched to not touched.
+            if not current_touched & pin_bit and last_touched & pin_bit:
+                print('{0} released!'.format(i))
+        # Update last state and wait a short period before repeating.
+        last_touched = current_touched
+        time.sleep(0.1)
 
-    # Alternatively, if you only care about checking one or a few pins you can
-    # call the is_touched method with a pin number to directly check that pin.
-    # This will be a little slower than the above code for checking a lot of pins.
-    #if cap.is_touched(0):
-    #    print('Pin 0 is being touched!')
+        # Alternatively, if you only care about checking one or a few pins you can
+        # call the is_touched method with a pin number to directly check that pin.
+        # This will be a little slower than the above code for checking a lot of pins.
+        #if cap.is_touched(0):
+        #    print('Pin 0 is being touched!')
 
-    # If you're curious or want to see debug info for each pin, uncomment the
-    # following lines:
-    #print '\t\t\t\t\t\t\t\t\t\t\t\t\t 0x{0:0X}'.format(cap.touched())
-    filtered = [cap.filtered_data(i) for i in range(5,6)]
-    print('Filt:', '\t'.join(map(str, filtered))),
-    base = [cap.baseline_data(i) for i in range(5,6)]
-    print('Base:', '\t'.join(map(str, base)))
+        # If you're curious or want to see debug info for each pin, uncomment the
+        # following lines:
+        #print '\t\t\t\t\t\t\t\t\t\t\t\t\t 0x{0:0X}'.format(cap.touched())
+        filtered = [cap.filtered_data(i) for i in range(12)]
+        fmtSendOsc("filtered", filtered)
+        # print("------")
+
+        # print('FILT:', '\t'.join(map(str, filtered))),
+        base = [cap.baseline_data(i) for i in range(12)]
+        fmtSendOsc("base", base)
+        # print('BASE:', '\t'.join(map(str, base)))
+        # client.send_message("/lx/output/enabled", filtered)
+    except:
+        print ("exceeption occured")
